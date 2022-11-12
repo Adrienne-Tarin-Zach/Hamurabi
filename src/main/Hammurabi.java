@@ -1,16 +1,16 @@
-package hammurabi;
+package hammurabi.src.main;
 import java.util.InputMismatchException;
 import java.util.Random;
 import java.util.Scanner;
 
-public class Hamurabi {
+public class Hammurabi {
     Random rand = new Random();
     Scanner scanner = new Scanner(System.in);
     boolean reign = true;
     int count = 0;
 
     public static void main(String[] args) {
-        new Hamurabi().playGame();
+        new Hammurabi().playGame();
     }
 
     void playGame() {
@@ -20,7 +20,7 @@ public class Hamurabi {
         int landValue = 19;
         int totalDead = 0;
         int yearlyDead = 0;
-        int acresPlanted = 0;
+        printWelcome();
 
         while (reign) {
             printSummary(yearlyDead, people, grain, acres, landValue);
@@ -45,15 +45,29 @@ public class Hamurabi {
             if (peopleFed<people) {
                 peopleStarved = people - peopleFed;
             }
+            people -= peopleStarved;
             yearlyDead = peopleStarved;
             totalDead+=peopleStarved;
             int harvest = harvest(plant);
             grain+=harvest;
             landValue = newCostOfLand();
             count++;
-            if (count==10) reign=false;
+            if (count==3) reign=false;
         }
-        printPerformance();
+        printPerformance(totalDead);
+    }
+
+    private void printWelcome() {
+        System.out.println("Congratulations, you are the newest ruler of ancient Sumer, elected for a ten year term of office."+
+                "\nYour duties are to dispense food, direct farming, and buy and sell land as needed to support your people."+
+                "\nWatch out for rat infestiations and the plague! Grain is the general currency, measured in bushels."+
+                "\nThe following will help you in your decisions:" +
+                "\n\tEach person needs at least 20 bushels of grain per year to survive"+
+                "\n\tEach person can farm at most 10 acres of land"+
+                "\n\tIt takes 2 bushels of grain to farm an acre of land"+
+                "\n\tThe market price for land fluctuates yearly"+
+                "\nRule wisely and you will be showered with appreciation at the end of your term. Rule poorly and you will be kicked out of office!"+
+                "\n***************\n");
     }
 
     private void printSummary(int yearlyDead, int people, int grain, int acres, int landValue) {
@@ -69,37 +83,37 @@ public class Hamurabi {
     }
 
     private int askHowManyAcresToBuy(int landValue, int grain) {
-        int buy = getNumber("O great one, how many acres would you like to purchase?");
+        int buy = getNumber("O great one, how many acres would you like to purchase? ");
         if (buy*landValue>grain) {
-            buy = getNumber(String.format("O you jest, my great liege. We only have %s bushels of grain.", grain));
+            buy = getNumber(String.format("O you jest, my great liege. We only have %s bushels of grain. ", grain));
         }
         return buy;
     }
 
     private int askHowManyAcresToSell(int acres) {
-        int sell = getNumber("O great one, how many acres would you like to sell?");
+        int sell = getNumber("O great one, how many acres would you like to sell? ");
         if (sell>acres) {
-            sell = getNumber(String.format("O you jest, my great liege. We only have %s acres.", acres));
+            sell = getNumber(String.format("O you jest, my great liege. We only have %s acres. ", acres));
         }
         return sell;
     }
 
     private int askHowMuchGrainToFeedPeople(int grain, int people) {
-        int feed = getNumber("Hamurabi, how much grain should each person be allowed?");
+        int feed = getNumber("Hammurabi, how much grain should each person be allowed? ");
         if (feed*people>grain) {
-            feed = getNumber(String.format("Surely you're joking. We only have %s bushels of grain", grain));
+            feed = getNumber(String.format("Surely you're joking. We only have %s bushels of grain ", grain));
         }
         return feed;
     }
     private int askHowManyAcresToPlant(int acres, int people, int grain) {
-        int plant = getNumber("Sir, how many acres of land would you like to plant with grain?");
+        int plant = getNumber("Sir, how many acres of land would you like to plant with grain? ");
         if (plant>people*10 || plant>grain/2*acres) {
-            plant = getNumber("We cannot plant that many acres.");
+            plant = getNumber("We cannot plant that many acres. ");
         }
         return plant;
     }
 
-    private int newCostOfLand() {
+    public int newCostOfLand() {
         return rand.nextInt(23-17 + 1) + 17;
     }
 
@@ -115,13 +129,14 @@ public class Hamurabi {
         }
     }
 
-    private int harvest(int plant) {
-        int yield = rand.nextInt(6);
+    public int harvest(int plant) {
+        int yield = rand.nextInt(6)+1;
         return plant*yield;
     }
 
-    private void printPerformance() {
+    private void printPerformance(int total) {
         System.out.println("You did great");
+        System.out.println(total+" people died.");
     }
 }
 
