@@ -6,6 +6,7 @@ import java.util.Scanner;
 public class Hammurabi {
     Random rand = new Random();
     Scanner scanner = new Scanner(System.in);
+    String badJob = "\nYou suck!";
     boolean reign = true;
     int count = 0;
 
@@ -20,10 +21,13 @@ public class Hammurabi {
         int landValue = 19;
         int totalDead = 0;
         int yearlyDead = 0;
+        int plagueDead = 0;
+        int immigrants = 0;
+        int cropsByRats = 0;
         printWelcome();
 
         while (reign) {
-            printSummary(yearlyDead, people, grain, acres, landValue);
+            printSummary(yearlyDead, people, grain, acres, landValue, immigrants, cropsByRats);
 
             int landBought = askHowManyAcresToBuy(landValue, grain);
             if (landBought==0) {
@@ -45,22 +49,35 @@ public class Hammurabi {
             if (peopleFed<people) {
                 peopleStarved = people - peopleFed;
             }
-            people -= peopleStarved;
-            yearlyDead = peopleStarved;
-            totalDead+=peopleStarved;
+            if (peopleStarved>.5*people) {
+                System.out.println(badJob + "\nYou starved " + peopleStarved + " in one year!");
+                System.exit(0);
+            }
             int harvest = harvest(plant);
             grain+=harvest;
             landValue = newCostOfLand();
+            //plague
+            plagueDead = plague(people);
+            yearlyDead = peopleStarved + plagueDead;
+            totalDead += peopleStarved + plagueDead;
+            //rats
+            cropsByRats = rats(grain);
+            grain -= cropsByRats;
+            //immigration (if statement)
+            immigrants = immigration(acres, grain, people, peopleStarved);
+            people = people - peopleStarved - plagueDead + immigrants;
             count++;
-            if (count==3) reign=false;
+            if (count==10) reign=false;
         }
-        printPerformance(totalDead);
+        int percentDied = totalDead / 10;
+        printPerformance(totalDead, acres, people, percentDied);
     }
+
 
     private void printWelcome() {
         System.out.println("Congratulations, you are the newest ruler of ancient Sumer, elected for a ten year term of office."+
                 "\nYour duties are to dispense food, direct farming, and buy and sell land as needed to support your people."+
-                "\nWatch out for rat infestiations and the plague! Grain is the general currency, measured in bushels."+
+                "\nWatch out for rat infestations and the plague! Grain is the general currency, measured in bushels."+
                 "\nThe following will help you in your decisions:" +
                 "\n\tEach person needs at least 20 bushels of grain per year to survive"+
                 "\n\tEach person can farm at most 10 acres of land"+
@@ -70,12 +87,13 @@ public class Hammurabi {
                 "\n***************\n");
     }
 
-    private void printSummary(int yearlyDead, int people, int grain, int acres, int landValue) {
-        String sb = "O great Hamurabi\n" +
+    private void printSummary(int yearlyDead, int people, int grain, int acres, int landValue, int immigrants, int rats) {
+        String sb = "O great Hammurabi\n" +
                 String.format("You are in year %s of your ten year rule.\n", count+1) +
                 String.format("In the previous year %s people died.\n", yearlyDead) +
+                String.format("%s people immigrated to your land.\n", immigrants) +
                 String.format("The population is now %s.\n", people) +
-                String.format("The city has %s bushels in storage.\n", grain) +
+                String.format("Rats destroyed %s bushels, leaving the city with %s bushels in storage.\n",rats, grain) +
                 String.format("The city owns %s acres of land.\n", acres) +
                 String.format("Land is currently worth %s bushels per acre.\n", landValue);
 
@@ -134,9 +152,47 @@ public class Hammurabi {
         return plant*yield;
     }
 
-    private void printPerformance(int total) {
-        System.out.println("You did great");
-        System.out.println(total+" people died.");
+    private void printPerformance(int total, int acres, int people, int percentDied) {
+        String result = "\nDuring your 10-year term as King, " + percentDied + " percent of the\n" +
+                "population starved per year on average, for a total of " + total + " dead!\n" +
+                "You started with 10 acres per person and ended with " +acres/people+ " acres per person.\n\n";
+        if (percentDied > 33 || acres / people < 7) {
+            result += badJob;
+        }
+        else if (percentDied> 10 || acres / people < 9) {
+            result += "You're very unliked";
+        }
+        else if (percentDied > 3 || acres / people < 10) {
+            int toHang = (int) ((rand.nextInt(people)+1)*.8);
+            result += "You did OK, but " + toHang + "people still want to hang you.";
+        }
+        else
+            result += "You did great, Hammurabi!";
+        result += "\n\n\n\nSo long for now.";
+        System.out.println(result);
+    }
+
+    public int plague(int people) {
+        if (Math.random() <= .15) {
+            System.out.println("The coronavirus has killed half the population!");
+            return people / 2;
+        }
+        return 0;
+    }
+
+    public int rats(int grain) {
+        if (Math.random() <= .4) {
+            int rats = rand.nextInt(30-10+1) +10;
+            return grain/rats;
+        }
+        return 0;
+    }
+
+    private int immigration(int acres, int grain, int people, int peopleStarved) {
+        if (peopleStarved>0) {
+            return people;
+        }
+        return (20*acres + grain) / (100*people);
     }
 }
 

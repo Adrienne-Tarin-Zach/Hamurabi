@@ -1,4 +1,4 @@
-package hammurabi;
+package hammurabi.src.test.java;
 
 import hammurabi.src.main.Hammurabi;
 import org.junit.Before;
