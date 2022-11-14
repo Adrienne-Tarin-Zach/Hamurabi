@@ -22,12 +22,12 @@ public class Hammurabi {
         int totalDead = 0;
         int yearlyDead = 0;
         int plagueDead = 0;
-        int immigrants = 0;
+        int newPeople = 0;
         int cropsByRats = 0;
         printWelcome();
 
         while (reign) {
-            printSummary(yearlyDead, people, grain, acres, landValue, immigrants, cropsByRats);
+            printSummary(yearlyDead, people, grain, acres, landValue, newPeople, cropsByRats);
 
             int landBought = askHowManyAcresToBuy(landValue, grain);
             if (landBought==0) {
@@ -39,39 +39,52 @@ public class Hammurabi {
                 acres += landBought;
                 grain -= landBought*landValue;
             }
+
             int foodPP = askHowMuchGrainToFeedPeople(grain, people);
             grain -= (foodPP*people);
+            int peopleFed = grain/20;
+
             int plant = askHowManyAcresToPlant(acres, people, grain);
             grain -= (plant*2);
 
-            int peopleFed = grain/20;
-            int peopleStarved=0;
+            int peopleStarved = starvationDeaths(people, grain);
             if (peopleFed<people) {
                 peopleStarved = people - peopleFed;
             }
-            if (peopleStarved>.5*people) {
-                System.out.println(badJob + "\nYou starved " + peopleStarved + " in one year!");
-                System.exit(0);
-            }
+
             int harvest = harvest(plant);
             grain+=harvest;
+
             landValue = newCostOfLand();
+
+            //uprising
+            if (uprising(people, peopleStarved)) {
+                System.out.println(badJob + "\nYou starved " + peopleStarved + " people in one year! To the gallows!");
+                System.exit(0);
+            }
+
             //plague
-            plagueDead = plague(people);
+            plagueDead = plagueDeaths(people);
+
             yearlyDead = peopleStarved + plagueDead;
             totalDead += peopleStarved + plagueDead;
+
             //rats
-            cropsByRats = rats(grain);
-            grain -= cropsByRats;
+            cropsByRats = grainEatenByRats(grain);
+            grain -= cropsByRats/grain;
+
             //immigration (if statement)
-            immigrants = immigration(acres, grain, people, peopleStarved);
-            people = people - peopleStarved - plagueDead + immigrants;
+            if (peopleStarved==0) newPeople = immigrants(people, grain, acres);
+
+            people = people - peopleStarved - plagueDead + newPeople;
             count++;
             if (count==10) reign=false;
         }
         int percentDied = totalDead / 10;
         printPerformance(totalDead, acres, people, percentDied);
     }
+
+
 
 
     private void printWelcome() {
@@ -147,6 +160,13 @@ public class Hammurabi {
         }
     }
 
+    public int starvationDeaths(int people, int grain) {
+        if ((people * 20) > grain) {
+            return people - (grain/20);
+        }
+        return 0;
+    }
+
     public int harvest(int plant) {
         int yield = rand.nextInt(6)+1;
         return plant*yield;
@@ -172,7 +192,7 @@ public class Hammurabi {
         System.out.println(result);
     }
 
-    public int plague(int people) {
+    public int plagueDeaths(int people) {
         if (Math.random() <= .15) {
             System.out.println("The coronavirus has killed half the population!");
             return people / 2;
@@ -180,19 +200,19 @@ public class Hammurabi {
         return 0;
     }
 
-    public int rats(int grain) {
+    public int grainEatenByRats(int grain) {
         if (Math.random() <= .4) {
-            int rats = rand.nextInt(30-10+1) +10;
-            return grain/rats;
+            return rand.nextInt(30-10+1)+10;
         }
         return 0;
     }
 
-    private int immigration(int acres, int grain, int people, int peopleStarved) {
-        if (peopleStarved>0) {
-            return people;
-        }
-        return (20*acres + grain) / (100*people);
+    public int immigrants(int people, int acres, int grain) {
+        return (20 * acres + grain) / (100 * people) + 1;
+    }
+
+    public boolean uprising(int people, int dead) {
+        return (dead>people*.45);
     }
 }
 
